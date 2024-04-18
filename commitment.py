@@ -27,3 +27,5 @@ class Commitment:
 
 # global values
 # k, q
+
+# added new comment here.
