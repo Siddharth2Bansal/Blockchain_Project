@@ -50,6 +50,8 @@ class Commitment:
             temp = []
             for j in range(q):
                 x = self.g ** Zp_multiply(self.Z[i], self.Z[j], self.p)
+                temp.append(x)
+            self.H2.append(temp)
 
         self.pp = {"g": self.g, "H": self.H, "H2": self.H2}
 
@@ -61,25 +63,29 @@ class Commitment:
             if C !=None:
                 C = C * (self.H[i] ** messages[i])
             else:
-                C = messages[i]
+                C = self.H[i] ** messages[i]
                 
         return C, messages
 
-    def produce_proof(self, message: int, index: int, auxiliary: list[int], q: int):
-        proof = None
-        for j in range(q):
-            if (j!=index):
-                if proof!= None:
-                    proof = proof * (self.H2[index][j] ** auxiliary[j])
-                else:
-                    proof = auxiliary[j]
+    def produce_proof(self, message, index, auxiliary, q):
+        proof = self.H2[index][index] ** (self.p - auxiliary[index])
+        arr = range(q)
+        for j in arr:
+            # if (j!=index):
+                # if proof!= None:
+            proof = proof * (self.H2[index][j] ** auxiliary[j])
+                # else:
+                #     proof = self.H2[index[j]] ** auxiliary[j]
 
         return proof
 
     def verify(self, commitment, message: int, index: int, proof):
-        e1 = get_bilinear_map(proof, self.g)
+        
         temp = commitment*(self.H[index] ** (self.p - message))
         e2 = get_bilinear_map(temp, self.H[index])
+        e1 = get_bilinear_map(proof, self.g)
+        # temp = commitment*(self.H[index] ** (self.p - message))
+        # e2 = get_bilinear_map(temp, self.H[index])
         if (e1==e2):
             return 1
         return 0
