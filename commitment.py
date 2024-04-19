@@ -23,6 +23,10 @@ def Zp_multiply(x, y, p):
     z = (x*y) % p
     return z
 
+def Zp_inverse(x, p):
+    y = pow(x, -1, p)
+    return y
+
 class file:
     def __init__(self, id, file_name = "default"):
         self.file_name = file_name
@@ -72,14 +76,32 @@ class Commitment:
 
         return proof
 
-    def verify(self, commitment, message: file, index: int, proof):
-        pass
+    def verify(self, commitment, message: int, index: int, proof):
+        e1 = get_bilinear_map(proof, self.g)
+        temp = commitment*(self.H[index] ** (self.p - message))
+        e2 = get_bilinear_map(temp, self.H[index])
+        if (e1==e2):
+            return 1
+        return 0
 
-    def update(self, commitment, old_message: file, new_message: file, index: int):
-        pass
+    def update(self, commitment, old_message: int, new_message: int, index: int):
+        temp = self.H[index] ** ((new_message - old_message) % self.p)
+        new_commitment = commitment * temp
+        U = [old_message, new_message, index]
 
-    def update_proof(self, commitment, old_proof, new_message, index, U):
-        pass
+        return new_commitment, U
+
+    def update_proof(self, old_commitment, old_proof, new_message, j: int, U):
+        old_message = U[0]
+        i = U[2]
+        temp = self.H[i] ** ((new_message - old_message) % self.p)
+        new_commitment = old_commitment * temp
+        if i!=j:
+            new_proof = old_proof * (temp ** self.Z[j])
+        else:
+            new_proof = old_proof
+    
+        return new_commitment, new_proof
 
 
 # global values
