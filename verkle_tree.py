@@ -5,6 +5,10 @@ def get_commitment(nodes):
         s = s + n.value
     return s
 
+def sort_nodes(nodes):
+    nodes.sort(key = lambda cur_node: cur_node.value)
+    return nodes
+
 class Node:
     def __init__(self, value, children, parent = 1) -> None:
         self.value = value
@@ -14,13 +18,14 @@ class Node:
 
 class VerkleTree:
     def __init__(self, leaves:list[Node], k) -> None:
-        self.leaves = leaves
+        self.leaves = leaves.copy()
+        self.leaves = sort_nodes(self.leaves)
         self.k = k
-        self.__build_tree(leaves, k)
+        self.__build_tree(k)
 
     # building Verkle Tree from given leaves and branching factor
-    def __build_tree(self, leaves, k):
-        nodes = leaves
+    def __build_tree(self,k):
+        nodes = self.leaves.copy()
         self.all_nodes = []
         # building tree layer wise from bottom
         while(nodes.__len__() > 1):
@@ -42,7 +47,6 @@ class VerkleTree:
         # setting root
         self.all_nodes.reverse()
         self.root = nodes[0]
-
 
     
     def print_tree(self):
@@ -66,17 +70,42 @@ class VerkleTree:
             node_to_check = Node(get_commitment(siblings), [])
             position = position // self.k
             level -= 1
-        print(node_to_check.value)
-        print(hash.value)
-        if node_to_check.value == hash.value:
-            print("Same data\n")
+        # print(node_to_check.value)
+        # print(hash)
+        if node_to_check.value == hash:
+            # print("Same data\n")
             return 1
-        print("Data changed!!!!\n")
+        # print("Data changed!!!!\n")
         return 0
         
 
+    def find_index(self, nodes, check_node):
+        n = nodes.__len__()
+        for i in range(n):
+            if nodes[i].value > check_node.value:
+                break
+        prev = i-1
+        next = i
+        if i == 0:
+            prev = None
+            next = i
+        if nodes[n-1].value < check_node.value:
+            prev = n - 1
+            next = None
+        return prev, next
+
     def not_present(self, node_to_check):
-        pass
+        prev, next = self.find_index(self.leaves, node_to_check)
+        ret_val = {}
+        if prev != None:
+            assert self.present(node_to_check, prev, self.root.value) == 0, "Value sent to not_present is in the leaves!!!."
+        if prev != None:
+            ret_val["prev"] = {"node": self.leaves[prev], "index": prev}
+            print(f"previous node hash {self.leaves[prev].value} and index {prev}")
+        if next != None:
+            ret_val["next"] = {"node": self.leaves[next], "index": next}
+            print(f"next node hash {self.leaves[next].value} and index {next}")
+        return ret_val
 
 
 
@@ -84,9 +113,39 @@ class VerkleTree:
 
 start_leaves = []
 for i in range(10):
-    new_node = Node(str(i), [])
+    new_node = Node(str(10-i), [])
+    # new_node = Node(2*i, [])
     start_leaves.append(new_node)
 
 new_tree = VerkleTree(start_leaves, 3)
 new_tree.print_tree()
-new_tree.present(Node("9",[]), 9, new_tree.root)
+
+# sorted_nodes = sort_nodes(start_leaves)
+# level = [node.value for node in sorted_nodes]
+# print(" ".join(str(level)))
+
+
+new_tree.present(Node("9",[]), 9, new_tree.root.value)
+new_tree.not_present(Node("15", []))
+
+
+# def find_index(nodes, check_node):
+#     n = nodes.__len__()
+#     for i in range(n):
+#         if nodes[i].value > check_node.value:
+#             break
+#     prev = i-1
+#     next = i
+#     if i == 0:
+#         prev = None
+#         next = i
+#     if nodes[n-1].value < check_node.value:
+#         prev = n - 1
+#         next = None
+#     return prev, next
+
+# print(find_index(start_leaves, Node(15, [])))
+# print(find_index(start_leaves, Node(35, [])))
+# print(find_index(start_leaves, Node(-5, [])))
+# print(find_index(start_leaves, Node(8, [])))
+# print(find_index(start_leaves, Node(20, [])))
