@@ -65,7 +65,7 @@ class Commitment:
             else:
                 C = self.H[i] ** messages[i]
                 
-        return C, messages
+        return C
 
     def produce_proof(self, message, index, auxiliary, q):
         proof = self.H2[index][index] ** (self.p - auxiliary[index])
