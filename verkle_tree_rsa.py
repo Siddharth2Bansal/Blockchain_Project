@@ -1,4 +1,4 @@
-from commitment import Commitment
+from commitment_rsa import Commitment_RSA
 import random
 from hashlib import sha256
 import sys
@@ -13,19 +13,19 @@ class Node:
         self.proof = None
         self.data = data
         if self.data != None:
-            self.hash = sha256(data.encode()).hexdigest()
+            self.hash = int(sha256(data.encode()).hexdigest(), 16)
         else:
             self.hash = hash
 
 
-class VerkleTree:
-    def __init__(self, leaves:list[str], k) -> None:
+class VerkleTree_RSA:
+    def __init__(self, leaves:list[str], k, size_domain, size_proof) -> None:
         self.leaves = [Node(data=x) for x in leaves.copy()]
         self.leaves = sort_nodes(self.leaves)
         self.k = k
         # q = random.randint(pow(10, level), 9 * pow(10, level))
-        self.commitment_scheme = Commitment()
-        self.commitment_scheme.key_gen(256,self.k)
+        self.commitment_scheme = Commitment_RSA()
+        self.commitment_scheme.key_gen(size_domain,self.k, size_proof)
         self.__build_tree(k)
     
     # building Verkle Tree from given leaves and branching factor
@@ -45,12 +45,10 @@ class VerkleTree:
             # creating parent nodes for all sets of childern
             for i in range(nodes.__len__()//k):
                 children_nodes = nodes[i*k:(i+1)*k]
-                children_node_hash = [int(s.hash, 16) for s in children_nodes]
+                children_node_hash = [s.hash for s in children_nodes]
                 # parent = Node(get_commitment(children_nodes), children_nodes)
-                C = self.commitment_scheme.commit(children_node_hash, self.k)
-                commited_hash = sha256(self.commitment_scheme.pairing.serialize(C)).hexdigest()
+                commited_hash = self.commitment_scheme.commit(children_node_hash, self.k)
                 parent = Node(hash=commited_hash)
-                parent.C = C
                 # for child_index in range(children_nodes.__len__()):
                 #     children_nodes[child_index].proof = self.commitment_scheme.produce_proof(children_nodes[child_index].hash, child_index, children_node_hash, self.k)
                 upper_layer.append(parent)
@@ -73,14 +71,14 @@ class VerkleTree:
         return self.all_nodes[level][i*self.k : (i+1)*self.k]
 
     def __get_values(self, position, level):
-        h = self.commitment_scheme.H[position % self.k]
+        e = self.commitment_scheme.E[position % self.k]
         if self.all_nodes[level][position].proof == None:
             siblings = self.__get_siblings(position, level)
-            sibling_hash = [int(s.hash, 16) for s in siblings]
+            sibling_hash = [s.hash for s in siblings]
             self.all_nodes[level][position].proof = self.commitment_scheme.produce_proof(self.all_nodes[level][position].hash, position % self.k, sibling_hash, self.k)
         proof = self.all_nodes[level][position].proof
-        cur_commitment = self.all_nodes[level-1][position//self.k].C
-        return h, proof, cur_commitment
+        cur_commitment = self.all_nodes[level-1][position//self.k].hash
+        return e, proof, cur_commitment
 
     def present(self, node_to_check, position, hash, size_of_leaves = None):
         if size_of_leaves==None:
@@ -91,14 +89,14 @@ class VerkleTree:
             h, proof, parent_commitment = self.__get_values(position, level)
             if (self.commitment_scheme.verify(parent_commitment, hash_node_to_check, position%self.k, proof)) == 0:
                 break
-            hash_node_to_check = int(sha256(self.commitment_scheme.pairing.serialize(parent_commitment)).hexdigest(), 16)
+            hash_node_to_check = parent_commitment
             position = position // self.k
             level -= 1
         # print(hash_node_to_check.value)
         # print(hash)
         shared = {h, proof, parent_commitment}
         print("Data exchanged verkle (bits) = ", (self.all_nodes.__len__()-level)*159*6)
-        if hash_node_to_check == int(hash, 16):
+        if hash_node_to_check == hash:
             # print("Same data\n")
             return 1
         # print("Data changed!!!!\n")
@@ -133,22 +131,22 @@ class VerkleTree:
             print(f"next node data {self.leaves[next].data} and index {next}")
         return ret_val
 
-# start_leaves = []
-# for i in range(10):
+start_leaves = []
+for i in range(10):
 #     # new_node = Node(data=str(10 - i))
-#     # new_node = Node(2*i)
-#     start_leaves.append(str(10-i))
-# new_tree = VerkleTree(start_leaves, 3)
+    # new_node = Node(2*i)
+    start_leaves.append(str(10-i))
+new_tree = VerkleTree_RSA(start_leaves, 3, 20, 5)
 
-# new_tree.print_tree()
+new_tree.print_tree()
 
 # # sorted_nodes = sort_nodes(start_leaves)
 # # level = [node.value for node in sorted_nodes]
 # # print(" ".join(str(level)))
 
 
-# print(new_tree.present("1", 0, new_tree.root.hash))
-# new_tree.not_present("-55")
+print(new_tree.present("1", 0, new_tree.root.hash))
+new_tree.not_present("-55")
 
 
 # def find_index(nodes, check_node):
