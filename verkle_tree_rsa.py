@@ -94,8 +94,6 @@ class VerkleTree_RSA:
             level -= 1
         # print(hash_node_to_check.value)
         # print(hash)
-        shared = {h, proof, parent_commitment}
-        print("Data exchanged verkle (bits) = ", (self.all_nodes.__len__()-level)*159*6)
         if hash_node_to_check == hash:
             # print("Same data\n")
             return 1

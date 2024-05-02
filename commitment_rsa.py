@@ -10,15 +10,16 @@ def is_prime(n):
     return True
 
 class Commitment_RSA:
+    # K is the bitsize of N, q is the number of messages, l is the bitsize of the exponent
     def key_gen(self, k, q, l):
         p1 = randint(1<<int(k/2), 1<<(int(k/2)+1))
         p2 = randint(1<<int(k/2), 1<<(int(k/2)+1))
-        self.N = p1 * p2
-        self.phi_N = (p1 - 1) * (p2 - 1)
         while not is_prime(p1):
             p1 = randint(1<<int(k/2), 1<<(int(k/2)+1))
         while not is_prime(p2):
             p2 = randint(1<<int(k/2), 1<<(int(k/2)+1))
+        self.N = p1 * p2
+        self.phi_N = (p1 - 1) * (p2 - 1)
         self.E = []
         for i in range(q):
             e_i = randint(1<<int(l+1), 1<<(int(l+2)))
