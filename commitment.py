@@ -44,17 +44,8 @@ class Commitment:
 
         for i in range(q):
             self.H.append(self.g ** self.Z[i])
-        
-        
-        # for i in range(q):
-        #     temp = []
-        #     for j in range(q):
-        #         x = self.g ** Zp_multiply(self.Z[i], self.Z[j], self.p)
-        #         temp.append(x)
-        #     self.H2.append(temp)
 
         self.pp = {"g": self.g, "H": self.H, "H2": self.H2}
-
 
     def commit(self, messages: list[int], q: int):
         assert messages.__len__() == q, "Incorrect number of messages to commit.\n"
@@ -67,16 +58,12 @@ class Commitment:
                 
         return C
 
-    def produce_proof(self, message, index, auxiliary, q):
+    def open(self, message, index, auxiliary, q):
         proof = (self.g ** Zp_multiply(self.Z[index], self.Z[index], self.p)) ** (self.p - auxiliary[index])
         arr = range(q)
         for j in arr:
-            # if (j!=index):
-                # if proof!= None:
             mult = Zp_multiply(self.Z[index], self.Z[j], self.p)
             proof = proof * (self.g ** Zp_multiply(mult, auxiliary[j], self.p))
-                # else:
-                #     proof = self.H2[index[j]] ** auxiliary[j]
 
         return proof
 
@@ -85,8 +72,7 @@ class Commitment:
         temp = commitment*(self.H[index] ** (self.p - message))
         e2 = get_bilinear_map(temp, self.H[index])
         e1 = get_bilinear_map(proof, self.g)
-        # temp = commitment*(self.H[index] ** (self.p - message))
-        # e2 = get_bilinear_map(temp, self.H[index])
+
         if (e1==e2):
             return 1
         return 0

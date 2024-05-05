@@ -12,41 +12,43 @@ merkle_times_present = []
 verkle_times_present = []
 
 leaves = []
-for i in range(0, 1<<16):
+for i in range(0, 1<<10):
     leaves.append(str(i))
 
-for i in range(4, 16):
+
+for k in range(4, 37, 4):
     st1 = time.time()
-    mt = MerkleTree(leaves[:1<<i], 36)
+    mt = MerkleTree(leaves, k)
     print("-------------------------------Next Case----------------------------")
-    print("number of leaves = ", 1<<i)
+    print("number of leaves = ", len(leaves))
+    print("Branching factor = ",k )
     e1 = time.time()
     merkle_times.append(e1-st1)
     print("time taken for merkle = ", e1-st1)
 
     st1 = time.time()
-    vt = VerkleTree(leaves[:1<<i], 36)
+    vt = VerkleTree(leaves, k)
     e1 = time.time()
     verkle_times.append(e1-st1)
     print("time taken for verkle = ", e1-st1)
 
     nodes_ret = 0
-    for j in range(i):
-        index = randint(0, (1<<i)-1)
+    for j in range(5):
+        index = randint(0, (1<<10)-1)
         nodes_ret = nodes_ret + vt.membership(leaves[index], index, hash=vt.root.hash)[1]
 
-    verkle_times_present.append(nodes_ret//i)
-    print("Average proof size(in bits) for verkle Tree membership = ", nodes_ret//i)
+    verkle_times_present.append(nodes_ret//5)
+    print("Average proof size(in bits) for verkle Tree membership = ", nodes_ret//5)
 
 
     nodes_ret = 0
-    for j in range(i):
-        index = randint(0, (1<<i)-1)
+    for j in range(5):
+        index = randint(0, (1<<10)-1)
         nodes_ret = nodes_ret + mt.present(leaves[index], index, hash=mt.root.hash)[1]
 
     e1 = time.time()
-    merkle_times_present.append(nodes_ret//i)
-    print("Average proof size(in bits) for merkle Tree membership = ", nodes_ret//i)
+    merkle_times_present.append(nodes_ret//5)
+    print("Average proof size(in bits) for merkle Tree membership = ", nodes_ret//5)
 
 # make a separate y axis for merkle tree and verkle tree
 # fig, ax1 = plt.subplots()

@@ -28,7 +28,7 @@ class MerkleTree:
         self.k = k
         self.__build_tree(k)
 
-    # building Verkle Tree from given leaves and branching factor
+    # building Merkle Tree from given leaves and branching factor
     def __build_tree(self,k):
         nodes = self.leaves.copy()
         self.all_nodes = []
@@ -55,9 +55,6 @@ class MerkleTree:
 
     
     def print_tree(self):
-        # for level in self.all_nodes:
-        #     level = [node.data for node in level]
-        #     print(" ".join(level))
         print([x.data for x in self.leaves])
 
 
@@ -76,15 +73,12 @@ class MerkleTree:
             hash_node_to_check = get_commitment(siblings)
             position = position // self.k
             level -= 1
-        # print(hash_node_to_check.hash)
-        # print(hash)
-        print("Data exchanged merkle (bits) = ", self.all_nodes.__len__()*self.k*256)
+ 
         if hash_node_to_check == hash:
-            # print("Same data\n")
-            return 1
-        # print("Data changed!!!!\n")
+            return 1, self.all_nodes.__len__()*self.k*256
 
-        return 0
+
+        return 0, self.all_nodes.__len__()*self.k*256
         
 
     def find_index(self, nodes, check_node: str):

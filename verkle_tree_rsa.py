@@ -27,6 +27,8 @@ class VerkleTree_RSA:
         self.commitment_scheme = Commitment_RSA()
         self.commitment_scheme.key_gen(size_domain,self.k, size_proof)
         self.__build_tree(k)
+        self.size_domain = size_domain
+        self.size_proof = size_proof
     
     # building Verkle Tree from given leaves and branching factor
     def __build_tree(self,k):
@@ -94,6 +96,7 @@ class VerkleTree_RSA:
             level -= 1
         # print(hash_node_to_check.value)
         # print(hash)
+        print("Data exchanged verkle (bits) = ", (self.all_nodes.__len__()-level)*(self.size_domain*2 + self.size_proof))
         if hash_node_to_check == hash:
             # print("Same data\n")
             return 1

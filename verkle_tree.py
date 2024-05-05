@@ -1,8 +1,8 @@
 from commitment import Commitment
-import random
 from hashlib import sha256
-import sys
 
+# the field size of the pairing group used in our implementation, SS512, is 159 bits.
+Field_size = 159
 
 def sort_nodes(nodes):
     nodes.sort(key = lambda cur_node: cur_node.data)
@@ -16,7 +16,6 @@ class Node:
             self.hash = sha256(data.encode()).hexdigest()
         else:
             self.hash = hash
-
 
 class VerkleTree:
     def __init__(self, leaves:list[str], k) -> None:
@@ -46,13 +45,10 @@ class VerkleTree:
             for i in range(nodes.__len__()//k):
                 children_nodes = nodes[i*k:(i+1)*k]
                 children_node_hash = [int(s.hash, 16) for s in children_nodes]
-                # parent = Node(get_commitment(children_nodes), children_nodes)
                 C = self.commitment_scheme.commit(children_node_hash, self.k)
                 commited_hash = sha256(self.commitment_scheme.pairing.serialize(C)).hexdigest()
                 parent = Node(hash=commited_hash)
                 parent.C = C
-                # for child_index in range(children_nodes.__len__()):
-                #     children_nodes[child_index].proof = self.commitment_scheme.produce_proof(children_nodes[child_index].hash, child_index, children_node_hash, self.k)
                 upper_layer.append(parent)
             nodes = upper_layer
         self.all_nodes.append(nodes)
@@ -60,13 +56,8 @@ class VerkleTree:
         self.all_nodes.reverse()
         self.root = nodes[0]
 
-    
     def print_tree(self):
-        # for level in self.all_nodes:
-        #     level = [node.data for node in level]
-        #     print("".join(str(level)))
         print([x.data for x in self.leaves])
-
 
     def __get_siblings(self, index, level):
         i = index // self.k
@@ -77,12 +68,12 @@ class VerkleTree:
         if self.all_nodes[level][position].proof == None:
             siblings = self.__get_siblings(position, level)
             sibling_hash = [int(s.hash, 16) for s in siblings]
-            self.all_nodes[level][position].proof = self.commitment_scheme.produce_proof(self.all_nodes[level][position].hash, position % self.k, sibling_hash, self.k)
+            self.all_nodes[level][position].proof = self.commitment_scheme.open(self.all_nodes[level][position].hash, position % self.k, sibling_hash, self.k)
         proof = self.all_nodes[level][position].proof
         cur_commitment = self.all_nodes[level-1][position//self.k].C
         return h, proof, cur_commitment
 
-    def present(self, node_to_check, position, hash, size_of_leaves = None):
+    def membership(self, node_to_check, position, hash, size_of_leaves = None):
         if size_of_leaves==None:
             size_of_leaves = self.leaves.__len__()
         hash_node_to_check = int(sha256(node_to_check.encode()).hexdigest(), 16)
@@ -94,15 +85,10 @@ class VerkleTree:
             hash_node_to_check = int(sha256(self.commitment_scheme.pairing.serialize(parent_commitment)).hexdigest(), 16)
             position = position // self.k
             level -= 1
-        # print(hash_node_to_check.value)
-        # print(hash)
-        shared = {h, proof, parent_commitment}
-        print("Data exchanged verkle (bits) = ", (self.all_nodes.__len__()-level)*159*6)
+
         if hash_node_to_check == int(hash, 16):
-            # print("Same data\n")
-            return 1
-        # print("Data changed!!!!\n")
-        return 0
+            return 1, (self.all_nodes.__len__())*(Field_size*2)*3
+        return 0, (self.all_nodes.__len__())*(Field_size*2)*3
         
 
     def find_index(self, nodes, check_value: str):
@@ -120,11 +106,11 @@ class VerkleTree:
             next = None
         return prev, next
 
-    def not_present(self, node_to_check):
+    def non_membership(self, node_to_check):
         prev, next = self.find_index(self.leaves, node_to_check)
         ret_val = {}
         if prev != None:
-            assert self.present(node_to_check, prev, self.root.hash) == 0, "Value sent to not_present is in the leaves!!!."
+            assert self.membership(node_to_check, prev, self.root.hash) == 0, "Value sent to not_present is in the leaves!!!."
         if prev != None:
             ret_val["prev"] = {"node": self.leaves[prev], "index": prev}
             print(f"previous node data {self.leaves[prev].data} and index {prev}")
@@ -132,42 +118,3 @@ class VerkleTree:
             ret_val["next"] = {"node": self.leaves[next], "index": next}
             print(f"next node data {self.leaves[next].data} and index {next}")
         return ret_val
-
-# start_leaves = []
-# for i in range(10):
-#     # new_node = Node(data=str(10 - i))
-#     # new_node = Node(2*i)
-#     start_leaves.append(str(10-i))
-# new_tree = VerkleTree(start_leaves, 3)
-
-# new_tree.print_tree()
-
-# # sorted_nodes = sort_nodes(start_leaves)
-# # level = [node.value for node in sorted_nodes]
-# # print(" ".join(str(level)))
-
-
-# print(new_tree.present("1", 0, new_tree.root.hash))
-# new_tree.not_present("-55")
-
-
-# def find_index(nodes, check_node):
-#     n = nodes.__len__()
-#     for i in range(n):
-#         if nodes[i].value > check_node.value:
-#             break
-#     prev = i-1
-#     next = i
-#     if i == 0:
-#         prev = None
-#         next = i
-#     if nodes[n-1].value < check_node.value:
-#         prev = n - 1
-#         next = None
-#     return prev, next
-
-# print(find_index(start_leaves, Node(15)))
-# print(find_index(start_leaves, Node(35)))
-# print(find_index(start_leaves, Node(-5)))
-# print(find_index(start_leaves, Node(8)))
-# print(find_index(start_leaves, Node(20)))
